@@ -14,6 +14,7 @@
               <p> {{ documento.editorial }}</p>
               <p> {{ documento.idioma }}</p>
               <p> {{ documento.autor }}</p>
+              <p> {{ documento.tipo_id }}</p>
           </div>
           <div class="column is-3">
               <h2 class="subtitle">Informacion</h2>
@@ -26,7 +27,7 @@
                   </div>
 
                   <div class="control">
-                      <a class="button is-dark"> Agregar Al Carrito</a>
+                      <a class="button is-dark" @click="addToCart"> Agregar Al Carrito</a>
                   </div>
               </div>
           </div>
@@ -36,7 +37,7 @@
 
 <script>
 import axios from "axios"
-
+import { toast } from 'bulma-toast'
 export default {
   name: "Documento",
   data() {
@@ -49,18 +50,46 @@ export default {
     this.getDocumento()
   },
   methods: {
-    getDocumento() {
+    async getDocumento() {
+      this.$store.commit('setIsLoading', true)
+
       const tipo_slug = this.$route.params.tipo_slug
       const document_slug = this.$route.params.document_slug
 
-      axios
+      await axios
           .get(`/api/v1/documentos/${tipo_slug}/${document_slug}`)
           .then(response =>{
               this.documento = response.data
+
+              document.title = this.documento.nombre + ' | Libreria Mintic'
           })
           .catch(error => {
               console.log(error)
           })
+
+      this.$store.commit('setIsLoading', false)
+    },
+    addToCart() {
+      if (isNaN(this.quantity) || this.quantity < 1) {
+        this.quantity = 1
+      }
+
+      const item = {
+          documento: this.documento,
+          quantity: this.quantity
+      }
+
+      this.$store.commit('addToCart', item)
+
+      toast({
+          message: 'El Producto fue añadido al carrito',
+          type: 'is-success',
+          dismissible: true,
+          pauseOnHover: true,
+          duration: 2000,
+          position: 'bottom-right',
+      })
+
     }
   }
 }
